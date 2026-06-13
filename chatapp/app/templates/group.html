@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+
+    <header class="bg-green-600 p-4 text-white flex justify-between items-center shadow-md">
+        <a href="{{ url_for('chat.groups') }}" class="text-white font-bold">&larr; Back</a>
+        <span class="font-bold text-xl">{{ group.name }}</span>
+        <span class="w-10"></span>
+    </header>
+
+    <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4">
+
+        {% for msg in messages %}
+            {% if msg.sender == username %}
+                <div class="p-3 rounded-lg w-fit max-w-md bg-green-600 text-white ml-auto">
+                    <strong>{{ msg.sender }}:</strong> {{ msg.content }}
+                </div>
+            {% else %}
+                <div class="p-3 rounded-lg w-fit max-w-md bg-white border">
+                    <strong>{{ msg.sender }}:</strong> {{ msg.content }}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+    </div>
+
+    <div class="p-4 bg-white border-t flex items-center shadow-lg">
+        <input id="messageInput" type="text" placeholder="Type a message..."
+            class="flex-1 border rounded-full px-4 py-2 outline-none focus:ring-2 focus:ring-green-400">
+        <button onclick="sendMessage()" class="ml-3 bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition">
+            Send
+        </button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        var socket = io();
+        var currentUser = "{{ username }}";
+        var room = "{{ room }}";
+
+        socket.emit('join', { 'room': room, 'username': currentUser });
+
+        function sendMessage() {
+            var input = document.getElementById("messageInput");
+            var message = input.value;
+
+            if (message.trim() !== "") {
+                socket.emit('send_message', {
+                    'message': message,
+                    'sender': currentUser,
+                    'receiver': room
+                });
+                input.value = "";
+            }
+        }
+
+        var inputBox = document.getElementById("messageInput");
+        inputBox.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        socket.on('receive_message', function(data) {
+            var chatContainer = document.getElementById("chat-container");
+            var msgElement = document.createElement("div");
+
+            var isMe = data.sender === currentUser;
+
+            if (isMe) {
+                msgElement.className = "p-3 rounded-lg w-fit max-w-md bg-green-600 text-white ml-auto";
+            } else {
+                msgElement.className = "p-3 rounded-lg w-fit max-w-md bg-white border";
+            }
+
+            msgElement.innerHTML = "<strong>" + data.sender + ":</strong> " + data.message;
+
+            chatContainer.appendChild(msgElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        });
+
+        var chatContainer = document.getElementById("chat-container");
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    </script>
+</body>
+</html>
