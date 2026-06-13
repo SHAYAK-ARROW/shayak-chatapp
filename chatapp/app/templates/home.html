@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+
+    <header class="bg-blue-600 p-4 text-white flex justify-between items-center shadow-md">
+        <span class="font-bold text-xl">Welcome, {{ name }}</span>
+        <a href="{{ url_for('auth.logout') }}" class="bg-white text-blue-600 px-4 py-1 rounded font-semibold">
+            Logout
+        </a>
+    </header>
+
+    <div class="flex-1 flex flex-col items-center justify-center space-y-4">
+
+        <a href="{{ url_for('chat.open_field') }}"
+            class="w-64 bg-blue-600 text-white text-center py-3 rounded-lg shadow hover:bg-blue-700 transition">
+            Open Chat (General)
+        </a>
+
+        <a href="{{ url_for('chat.groups') }}"
+            class="w-64 bg-green-600 text-white text-center py-3 rounded-lg shadow hover:bg-green-700 transition">
+            Group Chat
+        </a>
+
+        <a href="{{ url_for('chat.live_room_home') }}"
+            class="w-64 bg-purple-600 text-white text-center py-3 rounded-lg shadow hover:bg-purple-700 transition">
+            Live Room
+        </a>
+
+        <form method="GET" action="" onsubmit="goToPersonal(event)" class="w-64">
+            <input id="otherUserInput" type="text" placeholder="Enter username for personal chat" required
+                class="w-full border rounded px-3 py-2 mb-2 outline-none focus:ring-2 focus:ring-blue-400">
+            <button type="submit"
+                class="w-full bg-orange-500 text-white py-2 rounded shadow hover:bg-orange-600 transition">
+                Personal Chat
+            </button>
+        </form>
+
+    </div>
+
+    <script>
+        function goToPersonal(event) {
+            event.preventDefault();
+            var input = document.getElementById("otherUserInput");
+            var otherUser = input.value;
+            if (otherUser.trim() !== "") {
+                window.location.href = "/personal/" + otherUser;
+            }
+        }
+    </script>
+
+</body>
+</html>
