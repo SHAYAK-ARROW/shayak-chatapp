@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Room</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+
+    <header class="bg-purple-600 p-4 text-white flex justify-between items-center shadow-md">
+        <a href="#" onclick="goBackToSidebar(); return false;" class="text-white font-bold">&larr; Back</a>
+        <span class="font-bold text-xl">Live Room</span>
+        <span class="w-10"></span>
+    </header>
+
+    <div class="flex-1 flex items-center justify-center">
+        <form method="POST" class="bg-white p-6 rounded-lg shadow w-80">
+            <p class="mb-3 text-gray-600 text-sm">Enter a room name to create or join a live room. As long as one person is inside, the room stays active.</p>
+            <input type="text" name="room_id" placeholder="Room name (e.g. study-group-1)" required
+                class="w-full border rounded px-3 py-2 mb-3 outline-none focus:ring-2 focus:ring-purple-400">
+            <button type="submit"
+                class="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 transition">
+                Join Room
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // mobile e back button chaple sidebar dekhabe (jodi iframe er bhitore thake)
+        function goBackToSidebar() {
+            if (window.parent && window.parent.showSidebar) {
+                window.parent.showSidebar();
+            } else {
+                window.location.href = "/";
+            }
+        }
+    </script>
+
+</body>
+</html>
