@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groups</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+    <header class="bg-green-600 p-4 text-white flex justify-between items-center shadow-md">
+        <a href="{{ url_for('chat.home') }}" class="text-white font-bold">&larr; Back</a>
+        <span class="font-bold text-xl">Groups</span>
+        <span class="w-10"></span>
+    </header>
+
+    <div class="p-4">
+
+        <form method="POST" class="bg-white p-4 rounded-lg shadow mb-4 flex">
+            <input type="text" name="group_name" placeholder="New group name" required
+                class="flex-1 border rounded px-3 py-2 mr-2 outline-none focus:ring-2 focus:ring-green-400">
+            <button type="submit"
+                class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
+                Create Group
+            </button>
+        </form>
+
+        <div class="space-y-3">
+
+            {% for group in groups %}
+                <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
+                    <div>
+                        <p class="font-bold">{{ group.name }}</p>
+                        <p class="text-sm text-gray-500">Created by {{ group.creator }}</p>
+                    </div>
+                    <a href="{{ url_for('chat.join_group', group_id=group.id) }}"
+                        class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
+                        Open
+                    </a>
+                </div>
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</body>
+</html>
