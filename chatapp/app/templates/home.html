@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/common.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .chat-area {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .back-btn {
+            display: block;
+        }
+
+        @media (min-width: 768px) {
+            .sidebar {
+                width: 320px;
+                flex-shrink: 0;
+            }
+
+            .chat-area {
+                display: block;
+                flex: 1;
+            }
+
+            .back-btn {
+                display: none;
+            }
+        }
+
+        .sidebar.mobile-hide {
+            display: none;
+        }
+
+        .chat-area.mobile-show {
+            display: block;
+            flex: 1;
+        }
+
+        .chat-iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .unread-badge {
+            background-color: #ef4444;
+            color: white;
+            border-radius: 9999px;
+            font-size: 11px;
+            min-width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
+        }
+
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            background-color: #9ca3af;
+            flex-shrink: 0;
+        }
+
+        .online-dot.online {
+            background-color: #22c55e;
+        }
+
+        .chat-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-item-left {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            gap: 8px;
+        }
+
+        .chat-item-text {
+            min-width: 0;
+        }
+
+        .chat-item-preview {
+            font-size: 12px;
+            color: #6b7280;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+        }
+
+        .chat-item-time {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+
+        <div id="sidebar" class="sidebar bg-white border-r flex flex-col">
+
+            <div class="bg-blue-600 p-4 text-white flex justify-between items-center">
+                <span class="font-bold text-lg">{{ name }}</span>
+                <div class="flex items-center gap-3">
+                    <button id="themeToggleBtn" class="theme-toggle" onclick="toggleThemeButton()" title="Dark/Light mode">
+                        🌙
+                    </button>
+                    <a href="{{ url_for('auth.logout') }}" class="bg-white text-blue-600 px-3 py-1 rounded text-sm font-semibold">
+                        Logout
+                    </a>
+                </div>
+            </div>
+
+            <div class="p-3 space-y-2 border-b">
+
+                <div onclick="openChat('/open-chat', this, 'General')"
+                    class="w-full bg-blue-500 text-white p-2 rounded-lg font-semibold cursor-pointer">
+                    <div class="chat-item-row">
+                        <span>Open Field</span>
+                        <span class="unread-badge" id="badge-General" {% if open_chat.unread == 0 %}style="display:none;"{% endif %}>{{ open_chat.unread }}</span>
+                    </div>
+                    {% if open_chat.last_text != "" %}
+                        <div class="chat-item-row">
+                            <span class="chat-item-preview text-blue-100">{{ open_chat.last_text|truncate(28) }}</span>
+                            <span class="chat-item-time text-blue-100">{{ open_chat.last_time }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <button onclick="openChat('/live-room', null, null)"
+                    class="w-full bg-purple-600 text-white py-2 rounded-lg font-semibold">
+                    Live Room
+                </button>
+                <button onclick="openChat('/users', null, null)"
+                    class="w-full bg-gray-700 text-white py-2 rounded-lg font-semibold">
+                    Find Users
+                </button>
+            </div>
+
+            <div class="p-3 border-b">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold text-gray-700">Groups</span>
+                    <button onclick="openChat('/groups', null, null)"
+                        class="bg-green-600 text-white px-3 py-1 rounded text-sm">
+                        + New
+                    </button>
+                </div>
+
+                {% for group in my_groups %}
+                    <div onclick="openChat('/group/{{ group.id }}', this, '{{ group.room }}')"
+                        class="p-2 mb-1 rounded bg-gray-100 hover:bg-gray-200 cursor-pointer">
+                        <div class="chat-item-row">
+                            <div class="chat-item-left">
+                                <div class="avatar avatar-small" data-name="{{ group.name }}"></div>
+                                <span class="font-semibold">{{ group.name }}</span>
+                            </div>
+                            <span class="unread-badge" id="badge-{{ group.room }}" {% if group.unread == 0 %}style="display:none;"{% endif %}>{{ group.unread }}</span>
+                        </div>
+                        {% if group.last_text != "" %}
+                            <div class="chat-item-row">
+                                <span class="chat-item-preview">{{ group.last_text|truncate(28) }}</span>
+                                <span class="chat-item-time">{{ group.last_time }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                {% if my_groups|length == 0 %}
+                    <p class="text-sm text-gray-400">No groups yet</p>
+                {% endif %}
+            </div>
+
+            <div class="p-3 border-b">
+                <span class="font-bold text-gray-700">Personal Chats</span>
+
+                <form onsubmit="startPersonalChat(event)" class="flex mt-2 mb-2">
+                    <input id="newChatUser" type="text" placeholder="Enter username"
+                        class="flex-1 border rounded-l px-2 py-1 outline-none focus:ring-2 focus:ring-orange-400">
+                    <button type="submit" class="bg-orange-500 text-white px-3 rounded-r">
+                        Chat
+                    </button>
+                </form>
+
+                {% for chat in personal_chats %}
+                    <div onclick="openChat('/personal/{{ chat.username }}', this, '{{ chat.room }}')"
+                        class="p-2 mb-1 rounded bg-gray-100 hover:bg-gray-200 cursor-pointer">
+                        <div class="chat-item-row">
+                            <div class="chat-item-left">
+                                <div class="avatar avatar-small" data-name="{{ chat.username }}"></div>
+                                <span class="online-dot" data-username="{{ chat.username }}"></span>
+                                <span class="font-semibold">{{ chat.username }}</span>
+                            </div>
+                            <span class="unread-badge" id="badge-{{ chat.room }}" {% if chat.unread == 0 %}style="display:none;"{% endif %}>{{ chat.unread }}</span>
+                        </div>
+                        {% if chat.last_text != "" %}
+                            <div class="chat-item-row">
+                                <span class="chat-item-preview">{{ chat.last_text|truncate(28) }}</span>
+                                <span class="chat-item-time">{{ chat.last_time }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                {% if personal_chats|length == 0 %}
+                    <p class="text-sm text-gray-400">No personal chats yet</p>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <div id="chatArea" class="chat-area bg-gray-100">
+            <button id="backBtn" class="back-btn absolute top-2 left-2 z-10 bg-white shadow px-3 py-1 rounded"
+                onclick="showSidebar()">
+                &larr; Back
+            </button>
+            <iframe id="chatFrame" class="chat-iframe" src="/open-chat"></iframe>
+        </div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="/static/common.js"></script>
+    <script>
+        var currentUser = "{{ username }}";
+        var currentOpenRoom = "General";
+        var allRooms = {{ all_rooms|tojson }};
+        var socket = io();
+
+        // connect hole server ke jananor jonno, ar shob room e join kora (notification er jonno)
+        socket.on('connect', function() {
+            socket.emit('user_connected', { 'username': currentUser });
+
+            var i = 0;
+            while (i < allRooms.length) {
+                socket.emit('join', { 'room': allRooms[i], 'username': currentUser });
+                i = i + 1;
+            }
+        });
+
+        // online user list update hole - sob dot update kora hocche
+        socket.on('online_users_update', function(data) {
+            var onlineList = data.online_users;
+            var dots = document.querySelectorAll('.online-dot');
+
+            var i = 0;
+            while (i < dots.length) {
+                var dot = dots[i];
+                var dotUser = dot.getAttribute('data-username');
+
+                if (onlineList.indexOf(dotUser) !== -1) {
+                    dot.classList.add('online');
+                } else {
+                    dot.classList.remove('online');
+                }
+
+                i = i + 1;
+            }
+        });
+
+        // notun message ashle - badge update ar notification
+        socket.on('receive_message', function(data) {
+            var room = data.receiver;
+
+            if (data.sender === currentUser) {
+                return;
+            }
+
+            if (room === currentOpenRoom) {
+                return;
+            }
+
+            var badge = document.getElementById('badge-' + room);
+
+            if (badge) {
+                var current = parseInt(badge.innerText);
+
+                if (isNaN(current)) {
+                    current = 0;
+                }
+
+                badge.innerText = current + 1;
+                badge.style.display = 'flex';
+            }
+
+            showNotification(data.sender, data.message);
+        });
+
+        // sidebar e kono chat e click korle eta call hoy
+        function openChat(url, element, room) {
+            var iframe = document.getElementById('chatFrame');
+            iframe.src = url;
+
+            var chatArea = document.getElementById('chatArea');
+            var sidebar = document.getElementById('sidebar');
+
+            chatArea.classList.add('mobile-show');
+            sidebar.classList.add('mobile-hide');
+
+            currentOpenRoom = room;
+
+            // unread badge thakle click korar shathe shathe shorie deya
+            if (element) {
+                var badge = element.querySelector('.unread-badge');
+                if (badge) {
+                    badge.style.display = 'none';
+                    badge.innerText = '0';
+                }
+            }
+        }
+
+        // mobile e back button chaple sidebar dekhabe
+        function showSidebar() {
+            var chatArea = document.getElementById('chatArea');
+            var sidebar = document.getElementById('sidebar');
+
+            chatArea.classList.remove('mobile-show');
+            sidebar.classList.remove('mobile-hide');
+        }
+
+        // ei function ke iframe er bhitor theke call kora jay (back button er jonno)
+        window.showSidebar = showSidebar;
+
+        // notun personal chat shuru korar form
+        function startPersonalChat(event) {
+            event.preventDefault();
+            var input = document.getElementById('newChatUser');
+            var otherUser = input.value.trim();
+
+            if (otherUser !== "") {
+                openChat('/personal/' + otherUser, null, null);
+                input.value = "";
+            }
+        }
+
+        // ============ DARK MODE TOGGLE BUTTON ICON ============
+        function updateThemeIcon() {
+            var btn = document.getElementById('themeToggleBtn');
+            var theme = document.documentElement.getAttribute('data-theme');
+
+            if (theme === 'dark') {
+                btn.innerText = '☀️';
+            } else {
+                btn.innerText = '🌙';
+            }
+        }
+
+        function toggleThemeButton() {
+            toggleTheme();
+            updateThemeIcon();
+        }
+
+        updateThemeIcon();
+
+        // ============ BROWSER NOTIFICATION PERMISSION ============
+        if ("Notification" in window) {
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+        }
+
+        function showNotification(sender, message) {
+            if ("Notification" in window) {
+                if (Notification.permission === "granted") {
+                    new Notification(sender, { body: message });
+                }
+            }
+        }
+
+        // avatar gulo color/letter diye set kora
+        setupAvatars();
+    </script>
+
+</body>
+</html>

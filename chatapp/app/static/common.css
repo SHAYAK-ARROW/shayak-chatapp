@@ -1,0 +1,105 @@
+/* ============ DARK MODE ============ */
+/* localStorage e "theme" = "dark" thakle html tag e data-theme="dark" lage,
+   ar nicher rule gulo Tailwind er light color ke dark color e bodle dey */
+
+html[data-theme="dark"] body {
+    background-color: #0f172a;
+    color: #e5e7eb;
+}
+
+html[data-theme="dark"] .bg-white {
+    background-color: #1e293b !important;
+    color: #e5e7eb;
+}
+
+html[data-theme="dark"] .bg-gray-100 {
+    background-color: #0f172a !important;
+}
+
+html[data-theme="dark"] .bg-gray-200,
+html[data-theme="dark"] .hover\:bg-gray-200:hover {
+    background-color: #334155 !important;
+}
+
+html[data-theme="dark"] .text-gray-700,
+html[data-theme="dark"] .text-gray-600,
+html[data-theme="dark"] .text-gray-500,
+html[data-theme="dark"] .text-gray-400 {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .border,
+html[data-theme="dark"] .border-b,
+html[data-theme="dark"] .border-t,
+html[data-theme="dark"] .border-r {
+    border-color: #334155 !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select {
+    background-color: #1e293b !important;
+    color: #e5e7eb !important;
+    border-color: #334155 !important;
+}
+
+/* ============ AVATAR (notun letter diye gol icon) ============ */
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.avatar-small {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+}
+
+.avatar-large {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+}
+
+/* ============ TYPING INDICATOR ============ */
+
+.typing-text {
+    font-size: 12px;
+    color: #9ca3af;
+    padding: 4px 12px;
+    font-style: italic;
+}
+
+/* ============ MESSAGE EDIT/DELETE BUTTONS ============ */
+
+.msg-actions {
+    display: inline-flex;
+    gap: 6px;
+    margin-left: 8px;
+}
+
+.msg-action-btn {
+    cursor: pointer;
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+.msg-action-btn:hover {
+    opacity: 1;
+}
+
+/* ============ DARK MODE TOGGLE BUTTON ============ */
+
+.theme-toggle {
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 18px;
+}

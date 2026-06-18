@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/common.css">
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+
+    <header class="bg-orange-500 p-4 text-white flex justify-between items-center shadow-md">
+        <a href="#" onclick="goBackToSidebar(); return false;" class="text-white font-bold">&larr; Back</a>
+        <div class="flex items-center gap-2">
+            <div class="avatar avatar-small" data-name="{{ other_username }}"></div>
+            <span class="font-bold text-xl">{{ other_username }}</span>
+        </div>
+        <span class="w-10"></span>
+    </header>
+
+    <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4">
+
+        {% for msg in messages %}
+            {% if msg.sender == username %}
+                <div class="p-3 rounded-lg w-fit max-w-md bg-orange-500 text-white ml-auto" data-id="{{ msg.id }}">
+                    <strong>{{ msg.sender }}:</strong>
+                    <span class="message-text">{{ msg.content }}</span>
+                    <span class="text-xs opacity-75 ml-2">{{ msg.time_str }}</span>
+                    <span class="msg-actions">
+                        <span class="msg-action-btn" onclick="editMessage({{ msg.id }})">✏️</span>
+                        <span class="msg-action-btn" onclick="deleteMessage({{ msg.id }})">🗑️</span>
+                    </span>
+                </div>
+            {% else %}
+                <div class="p-3 rounded-lg w-fit max-w-md bg-white border" data-id="{{ msg.id }}">
+                    <strong>{{ msg.sender }}:</strong>
+                    <span class="message-text">{{ msg.content }}</span>
+                    <span class="text-xs text-gray-400 ml-2">{{ msg.time_str }}</span>
+                </div>
+            {% endif %}
+        {% endfor %}
+
+    </div>
+
+    <div id="typingIndicator" class="typing-text" style="display:none;"></div>
+
+    <div class="p-4 bg-white border-t flex items-center shadow-lg">
+        <input id="messageInput" type="text" placeholder="Type a message..."
+            class="flex-1 border rounded-full px-4 py-2 outline-none focus:ring-2 focus:ring-orange-400">
+        <button onclick="sendMessage()" class="ml-3 bg-orange-500 text-white px-6 py-2 rounded-full hover:bg-orange-600 transition">
+            Send
+        </button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="/static/common.js"></script>
+    <script>
+        var socket = io();
+        var currentUser = "{{ username }}";
+        var room = "{{ room }}";
+        var typingTimeout = null;
+
+        // mobile e back button chaple sidebar dekhabe (jodi iframe er bhitore thake)
+        function goBackToSidebar() {
+            if (window.parent && window.parent.showSidebar) {
+                window.parent.showSidebar();
+            } else {
+                window.location.href = "/";
+            }
+        }
+
+        socket.emit('join', { 'room': room, 'username': currentUser });
+
+        // page load hole ei room "read" mark kora hocche
+        fetch('/mark-read/' + room, { method: 'POST' });
+
+        function sendMessage() {
+            var input = document.getElementById("messageInput");
+            var message = input.value;
+
+            if (message.trim() !== "") {
+                socket.emit('send_message', {
+                    'message': message,
+                    'sender': currentUser,
+                    'receiver': room
+                });
+                input.value = "";
+
+                socket.emit('stop_typing', { 'room': room, 'username': currentUser });
+            }
+        }
+
+        var inputBox = document.getElementById("messageInput");
+        inputBox.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // typing indicator pathano
+        inputBox.addEventListener('keyup', function() {
+            socket.emit('typing', { 'room': room, 'username': currentUser });
+
+            if (typingTimeout) {
+                clearTimeout(typingTimeout);
+            }
+
+            typingTimeout = setTimeout(function() {
+                socket.emit('stop_typing', { 'room': room, 'username': currentUser });
+            }, 1500);
+        });
+
+        socket.on('user_typing', function(data) {
+            var indicator = document.getElementById('typingIndicator');
+            indicator.innerText = data.username + " is typing...";
+            indicator.style.display = 'block';
+        });
+
+        socket.on('user_stop_typing', function(data) {
+            var indicator = document.getElementById('typingIndicator');
+            indicator.style.display = 'none';
+        });
+
+        socket.on('receive_message', function(data) {
+            var chatContainer = document.getElementById("chat-container");
+            var msgElement = document.createElement("div");
+
+            var isMe = data.sender === currentUser;
+
+            msgElement.setAttribute('data-id', data.id);
+
+            var actionsHtml = "";
+
+            if (isMe) {
+                msgElement.className = "p-3 rounded-lg w-fit max-w-md bg-orange-500 text-white ml-auto";
+                actionsHtml = "<span class='msg-actions'>" +
+                    "<span class='msg-action-btn' onclick='editMessage(" + data.id + ")'>✏️</span>" +
+                    "<span class='msg-action-btn' onclick='deleteMessage(" + data.id + ")'>🗑️</span>" +
+                    "</span>";
+            } else {
+                msgElement.className = "p-3 rounded-lg w-fit max-w-md bg-white border";
+            }
+
+            var timeClass = isMe ? "text-xs opacity-75 ml-2" : "text-xs text-gray-400 ml-2";
+
+            msgElement.innerHTML = "<strong>" + data.sender + ":</strong> " +
+                "<span class='message-text'>" + data.message + "</span>" +
+                "<span class='" + timeClass + "'>" + data.time_str + "</span>" +
+                actionsHtml;
+
+            chatContainer.appendChild(msgElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            document.getElementById('typingIndicator').style.display = 'none';
+        });
+
+        function editMessage(id) {
+            var msgDiv = document.querySelector('[data-id="' + id + '"]');
+            var textSpan = msgDiv.querySelector('.message-text');
+            var currentText = textSpan.innerText;
+            var newText = prompt('Edit message:', currentText);
+
+            if (newText !== null && newText.trim() !== "") {
+                socket.emit('edit_message', {
+                    'message_id': id,
+                    'room': room,
+                    'username': currentUser,
+                    'new_content': newText
+                });
+            }
+        }
+
+        function deleteMessage(id) {
+            var confirmed = confirm('Delete this message?');
+
+            if (confirmed) {
+                socket.emit('delete_message', {
+                    'message_id': id,
+                    'room': room,
+                    'username': currentUser
+                });
+            }
+        }
+
+        socket.on('message_edited', function(data) {
+            var msgDiv = document.querySelector('[data-id="' + data.message_id + '"]');
+
+            if (msgDiv) {
+                var textSpan = msgDiv.querySelector('.message-text');
+                textSpan.innerText = data.new_content;
+            }
+        });
+
+        socket.on('message_deleted', function(data) {
+            var msgDiv = document.querySelector('[data-id="' + data.message_id + '"]');
+
+            if (msgDiv) {
+                msgDiv.remove();
+            }
+        });
+
+        var chatContainer = document.getElementById("chat-container");
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        // avatar set kora
+        setupAvatars();
+    </script>
+</body>
+</html>

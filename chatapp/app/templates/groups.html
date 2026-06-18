@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groups</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/common.css">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+    <header class="bg-green-600 p-4 text-white flex justify-between items-center shadow-md">
+        <a href="#" onclick="goBackToSidebar(); return false;" class="text-white font-bold">&larr; Back</a>
+        <span class="font-bold text-xl">Groups</span>
+        <span class="w-10"></span>
+    </header>
+
+    <div class="p-4">
+
+        {% if error %}
+            <p class="text-red-500 bg-red-50 p-2 rounded mb-3">{{ error }}</p>
+        {% endif %}
+
+        <form method="POST" class="bg-white p-4 rounded-lg shadow mb-4">
+            <input type="text" name="group_name" placeholder="New group name" required
+                class="w-full border rounded px-3 py-2 mb-3 outline-none focus:ring-2 focus:ring-green-400">
+
+            <p class="font-semibold text-sm text-gray-700 mb-1">Add members (optional)</p>
+            <div class="max-h-32 overflow-y-auto border rounded p-2 mb-3">
+                {% for user in all_users %}
+                    <label class="flex items-center gap-2 mb-1 text-sm">
+                        <input type="checkbox" name="members" value="{{ user.username }}">
+                        {{ user.name }} (@{{ user.username }})
+                    </label>
+                {% endfor %}
+
+                {% if all_users|length == 0 %}
+                    <p class="text-sm text-gray-400">No other users yet</p>
+                {% endif %}
+            </div>
+
+            <button type="submit"
+                class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
+                Create Group
+            </button>
+        </form>
+
+        <div class="space-y-3">
+
+            {% for group in my_groups %}
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <p class="font-bold">{{ group.name }}</p>
+                            <p class="text-sm text-gray-500">{{ group.member_count }} member(s)</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="/group/{{ group.id }}"
+                                class="bg-green-600 text-white px-3 py-1 rounded text-sm">
+                                Open
+                            </a>
+                            {% if group.creator == username %}
+                                <a href="{{ url_for('chat.delete_group', group_id=group.id) }}"
+                                    onclick="return confirm('Delete this group? This cannot be undone.')"
+                                    class="bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                    Delete
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if group.non_members|length > 0 %}
+                        <form method="POST" action="{{ url_for('chat.add_member', group_id=group.id) }}" class="flex gap-2">
+                            <select name="username" class="flex-1 border rounded px-2 py-1 text-sm">
+                                {% for user in group.non_members %}
+                                    <option value="{{ user.username }}">{{ user.name }} (@{{ user.username }})</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                                Add Member
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            {% if my_groups|length == 0 %}
+                <p class="text-sm text-gray-400">No groups yet. Create one above!</p>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <script>
+        // mobile e back button chaple sidebar dekhabe (jodi iframe er bhitore thake)
+        function goBackToSidebar() {
+            if (window.parent && window.parent.showSidebar) {
+                window.parent.showSidebar();
+            } else {
+                window.location.href = "/";
+            }
+        }
+    </script>
+
+    <script src="/static/common.js"></script>
+</body>
+</html>

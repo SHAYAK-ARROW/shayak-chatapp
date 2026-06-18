@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Users</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/common.css">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+    <header class="bg-orange-500 p-4 text-white flex justify-between items-center shadow-md">
+        <a href="#" onclick="goBackToSidebar(); return false;" class="text-white font-bold">&larr; Back</a>
+        <span class="font-bold text-xl">Find Users</span>
+        <span class="w-10"></span>
+    </header>
+
+    <div class="p-4">
+
+        <input id="searchInput" type="text" placeholder="Search by name or username"
+            onkeyup="filterUsers()"
+            class="w-full border rounded px-3 py-2 mb-4 outline-none focus:ring-2 focus:ring-orange-400">
+
+        <div id="userList" class="space-y-2">
+
+            {% for user in users %}
+                <div class="user-item bg-white p-3 rounded-lg shadow flex justify-between items-center cursor-pointer"
+                    onclick="openPersonalChat('{{ user.username }}')"
+                    data-name="{{ user.name|lower }}"
+                    data-username="{{ user.username|lower }}">
+                    <div>
+                        <p class="font-bold">{{ user.name }}</p>
+                        <p class="text-sm text-gray-500">@{{ user.username }}</p>
+                    </div>
+                    <span class="bg-orange-500 text-white px-3 py-1 rounded text-sm">Chat</span>
+                </div>
+            {% endfor %}
+
+            {% if users|length == 0 %}
+                <p class="text-sm text-gray-400">No other users found</p>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <script>
+        // search box e likhle user list filter hobe
+        function filterUsers() {
+            var input = document.getElementById('searchInput');
+            var keyword = input.value.toLowerCase();
+
+            var items = document.getElementsByClassName('user-item');
+            var i = 0;
+
+            while (i < items.length) {
+                var item = items[i];
+                var name = item.getAttribute('data-name');
+                var uname = item.getAttribute('data-username');
+
+                if (name.indexOf(keyword) !== -1 || uname.indexOf(keyword) !== -1) {
+                    item.style.display = "flex";
+                } else {
+                    item.style.display = "none";
+                }
+
+                i = i + 1;
+            }
+        }
+
+        // user e click korle personal chat khulbe
+        function openPersonalChat(otherUsername) {
+            if (window.parent && window.parent.openChat) {
+                window.parent.openChat('/personal/' + otherUsername);
+            } else {
+                window.location.href = "/personal/" + otherUsername;
+            }
+        }
+
+        // mobile e back button chaple sidebar dekhabe (jodi iframe er bhitore thake)
+        function goBackToSidebar() {
+            if (window.parent && window.parent.showSidebar) {
+                window.parent.showSidebar();
+            } else {
+                window.location.href = "/";
+            }
+        }
+    </script>
+
+    <script src="/static/common.js"></script>
+</body>
+</html>
